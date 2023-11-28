@@ -1,16 +1,14 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions as django_exceptions
-from djoser.serializers import UserCreateSerializer, UserSerializer
-from drf_base64.fields import Base64ImageField
-from recipes.models import (Favorite, Ingredient, Recipe, Recipe_ingredient,
-                            Shopping_cart, Tag)
-from rest_framework import serializers
-from users.models import Subscribe, User
 from django.db import transaction
 
-# -----------------------------------------------------------------------------
-#                            Приложение users
-# -----------------------------------------------------------------------------
+from djoser.serializers import UserCreateSerializer, UserSerializer
+from drf_base64.fields import Base64ImageField
+from rest_framework import serializers
+
+from recipes.models import (Favorite, Ingredient, Recipe, Recipe_ingredient,
+                            Shopping_cart, Tag)
+from users.models import Subscribe, User
 
 
 class UserReadSerializer(UserSerializer):
@@ -157,10 +155,6 @@ class SubscribeAuthorSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
-
-# -----------------------------------------------------------------------------
-#                            Приложение recipes
-# -----------------------------------------------------------------------------
 
 
 class IngredientSerializer(serializers.ModelSerializer):

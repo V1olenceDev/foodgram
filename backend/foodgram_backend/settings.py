@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 project_folder = Path(__file__).resolve().parent.parent.parent
