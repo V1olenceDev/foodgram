@@ -3,10 +3,9 @@ from django.core import exceptions as django_exceptions
 from django.db import transaction
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
-from rest_framework import serializers
-
 from recipes.models import (Favorite, Ingredient, Recipe, Recipe_ingredient,
                             Shopping_cart, Tag)
+from rest_framework import serializers
 from users.models import Subscribe, User
 
 
