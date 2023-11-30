@@ -58,11 +58,10 @@ class RecipeAdmin(admin.ModelAdmin):
         return obj.favorite_recipe.count()
 
 
-@admin.register(models.Recipe_ingredient)
+@admin.register(models.RecipeIngredientLink)
 class RecipeIngredientAdmin(admin.ModelAdmin):
     """
-    Административный интерфейс для модели RecipeIngredientLink
-    (ранее Recipe_ingredient).
+    Административный интерфейс для модели RecipeIngredientLink.
     Предоставляет возможности для управления связями
     между рецептами и ингредиентами.
     """
@@ -70,21 +69,20 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     list_editable = ('recipe', 'ingredient', 'amount')
 
 
-@admin.register(models.Favorite)
+@admin.register(models.UserFavoriteRecipe)
 class FavoriteAdmin(admin.ModelAdmin):
     """
-    Административный интерфейс для модели UserFavoriteRecipe (ранее Favorite).
+    Административный интерфейс для модели UserFavoriteRecipe.
     Позволяет управлять избранными рецептами пользователей.
     """
     list_display = ('pk', 'user', 'recipe')
     list_editable = ('user', 'recipe')
 
 
-@admin.register(models.Shopping_cart)
+@admin.register(models.UserShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     """
-    Административный интерфейс для модели UserShoppingCart
-    (ранее Shopping_cart).
+    Административный интерфейс для модели UserShoppingCart.
     Позволяет управлять списком покупок пользователей,
     включая добавление и удаление рецептов.
     """
