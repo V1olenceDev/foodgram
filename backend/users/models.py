@@ -3,7 +3,16 @@ from django.db import models
 
 
 class User(AbstractUser):
-    email = models.EmailField(max_length=254, unique=True)
+    """
+    Пользовательская модель, расширяющая стандартную
+    модель пользователя Django.
+    Включает стандартные поля пользователя
+    Django и добавляет уникальное поле email.
+    """
+    email = models.EmailField(
+        max_length=254,
+        unique=True
+    )
 
     class Meta:
         ordering = ['id']
@@ -15,6 +24,13 @@ class User(AbstractUser):
 
 
 class Subscribe(models.Model):
+    """
+    Модель для хранения информации о подписках пользователей.
+    Содержит ссылки на подписчика (user) и автора (author),
+    на которого он подписан.
+    Устанавливает ограничение на уникальность комбинации
+    подписчика и автора.
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

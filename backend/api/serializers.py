@@ -3,14 +3,22 @@ from django.core import exceptions as django_exceptions
 from django.db import transaction
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
-from recipes.models import (Favorite, Ingredient, Recipe, Recipe_ingredient,
-                            Shopping_cart, Tag)
+from recipes.models import (
+    UserFavoriteRecipe,
+    Ingredient,
+    Recipe,
+    RecipeIngredientLink,
+    UserShoppingCart,
+    Tag)
 from rest_framework import serializers
 from users.models import Subscribe, User
 
 
-class UserReadSerializer(UserSerializer):
-    """[GET] Cписок пользователей."""
+class UserProfileReadSerializer(UserSerializer):
+    """
+    Сериализатор для чтения информации о пользователе.
+    Определяет, подписан ли текущий пользователь на автора.
+    """
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -27,8 +35,11 @@ class UserReadSerializer(UserSerializer):
         return False
 
 
-class UserCreateSerializer(UserCreateSerializer):
-    """[POST] Создание нового пользователя."""
+class UserProfileCreateSerializer(UserCreateSerializer):
+    """
+    Сериализатор для создания нового пользователя.
+    Включает валидацию уникальности имени пользователя и проверку пароля.
+    """
     class Meta:
         model = User
         fields = ('email', 'id', 'username',
@@ -45,13 +56,16 @@ class UserCreateSerializer(UserCreateSerializer):
                              'subscriptions', 'subscribe']
         if self.initial_data.get('username') in invalid_usernames:
             raise serializers.ValidationError(
-                {'username': 'Вы не можете использовать этот username.'}
+                {'username': 'Данное имя пользователя недоступно.'}
             )
         return obj
 
 
-class SetPasswordSerializer(serializers.Serializer):
-    """[POST] Изменение пароля пользователя."""
+class UserPasswordSetSerializer(serializers.Serializer):
+    """
+    Сериализатор для установки нового пароля пользователя.
+    Проверяет текущий пароль и валидирует новый пароль.
+    """
     current_password = serializers.CharField()
     new_password = serializers.CharField()
 
@@ -67,7 +81,7 @@ class SetPasswordSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         if not instance.check_password(validated_data['current_password']):
             raise serializers.ValidationError(
-                {'current_password': 'Неправильный пароль.'}
+                {'current_password': 'Неверный пароль.'}
             )
         if (validated_data['current_password']
            == validated_data['new_password']):
@@ -80,7 +94,10 @@ class SetPasswordSerializer(serializers.Serializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    """Список рецептов без ингридиентов."""
+    """
+    Сериализатор для представления краткой информации о рецепте.
+    Используется для представления рецептов в списках подписок и избранного.
+    """
     image = Base64ImageField(read_only=True)
     name = serializers.ReadOnlyField()
     cooking_time = serializers.ReadOnlyField()
@@ -91,8 +108,11 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'image', 'cooking_time')
 
 
-class SubscriptionsSerializer(serializers.ModelSerializer):
-    """[GET] Список авторов на которых подписан пользователь."""
+class UserSubscriptionsSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для представления подписок пользователя.
+    Включает информацию о подписанных авторах и их рецептах.
+    """
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
@@ -124,8 +144,11 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-class SubscribeAuthorSerializer(serializers.ModelSerializer):
-    """[POST, DELETE] Подписка на автора и отписка."""
+class AuthorSubscriptionSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для подписки на авторов рецептов.
+    Включает информацию о авторе и его рецептах.
+    """
     email = serializers.ReadOnlyField()
     username = serializers.ReadOnlyField()
     is_subscribed = serializers.SerializerMethodField()
@@ -141,7 +164,8 @@ class SubscribeAuthorSerializer(serializers.ModelSerializer):
 
     def validate(self, obj):
         if (self.context['request'].user == obj):
-            raise serializers.ValidationError({'errors': 'Ошибка подписки.'})
+            raise serializers.ValidationError(
+                {'errors': 'Невозможно подписаться.'})
         return obj
 
     def get_is_subscribed(self, obj):
@@ -156,37 +180,48 @@ class SubscribeAuthorSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-    """[GET] Список ингредиентов."""
+    """
+    Сериализатор для представления информации об ингредиентах блюд.
+    """
     class Meta:
         model = Ingredient
         fields = '__all__'
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """[GET] Список тегов."""
+    """
+    Сериализатор для представления кулинарных тегов.
+    """
     class Meta:
         model = Tag
         fields = '__all__'
 
 
-class RecipeIngredientSerializer(serializers.ModelSerializer):
-    """Список ингредиентов с количеством для рецепта."""
+class RecipeIngredientDetailSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для детального представления ингредиентов в рецепте.
+    Включает информацию об ингредиенте и его количестве.
+    """
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit')
 
     class Meta:
-        model = Recipe_ingredient
+        model = RecipeIngredientLink
         fields = ('id', 'name',
                   'measurement_unit', 'amount')
 
 
-class RecipeReadSerializer(serializers.ModelSerializer):
-    """[GET] Список рецептов."""
-    author = UserReadSerializer(read_only=True)
+class RecipeDetailReadSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для детального чтения рецепта.
+    Включает автора, теги, ингредиенты, и
+    информацию об избранном и списке покупок.
+    """
+    author = UserProfileReadSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    ingredients = RecipeIngredientSerializer(
+    ingredients = RecipeIngredientDetailSerializer(
         many=True, read_only=True, source='recipes')
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -203,33 +238,44 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         return (
             self.context.get('request').user.is_authenticated
-            and Favorite.objects.filter(user=self.context['request'].user,
-                                        recipe=obj).exists()
+            and UserFavoriteRecipe.objects.filter(
+                user=self.context['request'].user,
+                recipe=obj).exists()
         )
 
     def get_is_in_shopping_cart(self, obj):
         return (
             self.context.get('request').user.is_authenticated
-            and Shopping_cart.objects.filter(
+            and UserShoppingCart.objects.filter(
                 user=self.context['request'].user,
                 recipe=obj).exists()
         )
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
-    """Ингредиент и количество для создания рецепта."""
+    """
+    Сериализатор для создания ингредиентов рецепта.
+    Используется в процессе создания или обновления рецепта для обработки
+    информации об ингредиентах, включая их идентификаторы и количества.
+    """
     id = serializers.IntegerField()
 
     class Meta:
-        model = Recipe_ingredient
+        model = RecipeIngredientLink
         fields = ('id', 'amount')
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
-    """[POST, PATCH, DELETE] Создание, изменение и удаление рецепта."""
+    """
+    Сериализатор для создания и обновления рецептов.
+    Обрабатывает информацию о рецепте, включая ингредиенты, теги, изображение,
+    название, описание и время приготовления.
+    Также обеспечивает валидацию данных.
+    Поддерживает транзакционное добавление тегов и ингредиентов.
+    """
     tags = serializers.PrimaryKeyRelatedField(many=True,
                                               queryset=Tag.objects.all())
-    author = UserReadSerializer(read_only=True)
+    author = UserProfileReadSerializer(read_only=True)
     id = serializers.ReadOnlyField()
     ingredients = RecipeIngredientCreateSerializer(many=True)
     image = Base64ImageField()
@@ -274,8 +320,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def tags_and_ingredients_set(self, recipe, tags, ingredients):
         recipe.tags.set(tags)
-        Recipe_ingredient.objects.bulk_create(
-            [Recipe_ingredient(
+        RecipeIngredientLink.objects.bulk_create(
+            [RecipeIngredientLink(
                 recipe=recipe,
                 ingredient=Ingredient.objects.get(pk=ingredient['id']),
                 amount=ingredient['amount']
@@ -300,7 +346,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time', instance.cooking_time)
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        Recipe_ingredient.objects.filter(
+        RecipeIngredientLink.objects.filter(
             recipe=instance,
             ingredient__in=instance.ingredients.all()).delete()
         self.tags_and_ingredients_set(instance, tags, ingredients)
@@ -308,5 +354,5 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, instance):
-        return RecipeReadSerializer(instance,
-                                    context=self.context).data
+        return RecipeDetailReadSerializer(
+            instance, context=self.context).data

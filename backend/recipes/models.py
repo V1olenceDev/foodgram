@@ -4,6 +4,10 @@ from users.models import User
 
 
 class Ingredient(models.Model):
+    """
+    Модель для хранения информации об ингредиентах.
+    Содержит название ингредиента и единицу измерения.
+    """
     name = models.CharField(
         'Название',
         max_length=200
@@ -23,6 +27,10 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
+    """
+    Модель для хранения тегов рецептов.
+    Содержит название тега, его цвет в HEX формате и уникальный слаг.
+    """
     name = models.CharField(
         'Название',
         max_length=200
@@ -55,6 +63,12 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
+    """
+    Основная модель для хранения рецептов.
+    Содержит информацию о названии, описании,
+    времени приготовления, изображении,
+    дате публикации, авторе и связанных тегах и ингредиентах.
+    """
     name = models.CharField(
         'Название',
         max_length=200
@@ -101,7 +115,12 @@ class Recipe(models.Model):
         return self.name
 
 
-class Recipe_ingredient(models.Model):
+class RecipeIngredientLink(models.Model):
+    """
+    Промежуточная модель для связи рецептов с ингредиентами.
+    Содержит информацию о рецепте, ингредиенте и количестве
+    ингредиента в рецепте.
+    """
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -136,7 +155,11 @@ class Recipe_ingredient(models.Model):
                 f'{self.ingredient.measurement_unit}')
 
 
-class Favorite(models.Model):
+class UserFavoriteRecipe(models.Model):
+    """
+    Модель для хранения информации об избранных рецептах пользователей.
+    Содержит ссылки на пользователя и избранный рецепт.
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -164,7 +187,11 @@ class Favorite(models.Model):
         return f'{self.user.username} - {self.recipe.name}'
 
 
-class Shopping_cart(models.Model):
+class UserShoppingCart(models.Model):
+    """
+    Модель для хранения информации о рецептах в корзине покупок пользователя.
+    Содержит ссылки на пользователя и рецепт, добавленный в корзину.
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

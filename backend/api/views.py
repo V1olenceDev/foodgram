@@ -3,56 +3,75 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from foodgram.settings import FILE_NAME
-from recipes.models import (Favorite, Ingredient, Recipe, Recipe_ingredient,
-                            Shopping_cart, Tag)
-from rest_framework import filters, mixins, status, viewsets
+from recipes.models import (
+    UserFavoriteRecipe,
+    Ingredient,
+    Recipe,
+    RecipeIngredientLink,
+    UserShoppingCart,
+    Tag)
+from rest_framework import (
+    filters,
+    mixins,
+    status,
+    viewsets)
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from users.models import Subscribe, User
 
-from .filters import RecipeFilter
+from .filters import RecipeQueryFilter
 from .pagination import CustomPaginator
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (IngredientSerializer, RecipeCreateSerializer,
-                          RecipeReadSerializer, RecipeSerializer,
-                          SetPasswordSerializer, SubscribeAuthorSerializer,
-                          SubscriptionsSerializer, TagSerializer,
-                          UserCreateSerializer, UserReadSerializer)
+from .serializers import (
+    UserProfileReadSerializer,
+    UserPasswordSetSerializer,
+    UserCreateSerializer,
+    UserSubscriptionsSerializer,
+    IngredientSerializer,
+    RecipeCreateSerializer,
+    RecipeDetailReadSerializer,
+    RecipeSerializer,
+    AuthorSubscriptionSerializer,
+    TagSerializer)
 
-# -----------------------------------------------------------------------------
-#                            Приложение users
-# -----------------------------------------------------------------------------
 
-
-class UserViewSet(mixins.CreateModelMixin,
-                  mixins.ListModelMixin,
-                  mixins.RetrieveModelMixin,
-                  viewsets.GenericViewSet):
+class UserProfileViewSet(mixins.CreateModelMixin,
+                         mixins.ListModelMixin,
+                         mixins.RetrieveModelMixin,
+                         viewsets.GenericViewSet):
+    """
+    Вьюсет для управления профилями пользователей.
+    Поддерживает создание,
+    просмотр списка и детальный просмотр профилей.
+    """
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     pagination_class = CustomPaginator
 
     def get_serializer_class(self):
+        """
+        Определяет класс сериализатора в зависимости от действия.
+        """
         if self.action in ('list', 'retrieve'):
-            return UserReadSerializer
+            return UserProfileReadSerializer
         return UserCreateSerializer
 
     @action(detail=False, methods=['get'],
             pagination_class=None,
             permission_classes=(IsAuthenticated,))
     def me(self, request):
-        serializer = UserReadSerializer(request.user)
+        serializer = UserProfileReadSerializer(request.user)
         return Response(serializer.data,
                         status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'],
             permission_classes=(IsAuthenticated,))
     def set_password(self, request):
-        serializer = SetPasswordSerializer(request.user, data=request.data)
+        serializer = UserPasswordSetSerializer(request.user, data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
-        return Response({'detail': 'Пароль успешно изменен!'},
+        return Response({'detail': 'Пароль изменен.'},
                         status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
@@ -61,8 +80,8 @@ class UserViewSet(mixins.CreateModelMixin,
     def subscriptions(self, request):
         queryset = User.objects.filter(subscribing__user=request.user)
         page = self.paginate_queryset(queryset)
-        serializer = SubscriptionsSerializer(page, many=True,
-                                             context={'request': request})
+        serializer = UserSubscriptionsSerializer(
+            page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=['post', 'delete'],
@@ -71,7 +90,7 @@ class UserViewSet(mixins.CreateModelMixin,
         author = get_object_or_404(User, id=kwargs['pk'])
 
         if request.method == 'POST':
-            serializer = SubscribeAuthorSerializer(
+            serializer = AuthorSubscriptionSerializer(
                 author, data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
             Subscribe.objects.create(user=request.user, author=author)
@@ -81,17 +100,32 @@ class UserViewSet(mixins.CreateModelMixin,
         if request.method == 'DELETE':
             get_object_or_404(Subscribe, user=request.user,
                               author=author).delete()
-            return Response({'detail': 'Успешная отписка'},
+            return Response({'detail': 'Успешно'},
                             status=status.HTTP_204_NO_CONTENT)
 
-# -----------------------------------------------------------------------------
-#                            Приложение recipes
-# -----------------------------------------------------------------------------
+
+class TagViewSet(mixins.ListModelMixin,
+                 mixins.RetrieveModelMixin,
+                 viewsets.GenericViewSet):
+    """
+    Вьюсет для управления кулинарными тегами.
+    Позволяет получить список всех тегов
+    и детальную информацию о каждом теге.
+    """
+    permission_classes = (AllowAny, )
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    pagination_class = None
 
 
-class IngredientViewSet(mixins.ListModelMixin,
-                        mixins.RetrieveModelMixin,
-                        viewsets.GenericViewSet):
+class FoodIngredientViewSet(mixins.ListModelMixin,
+                            mixins.RetrieveModelMixin,
+                            viewsets.GenericViewSet):
+    """
+    Вьюсет для управления ингредиентами блюд.
+    Поддерживает получение списка
+    и детальной информации об ингредиентах.
+    """
     queryset = Ingredient.objects.all()
     permission_classes = (AllowAny, )
     serializer_class = IngredientSerializer
@@ -100,26 +134,25 @@ class IngredientViewSet(mixins.ListModelMixin,
     search_fields = ('^name', )
 
 
-class TagViewSet(mixins.ListModelMixin,
-                 mixins.RetrieveModelMixin,
-                 viewsets.GenericViewSet):
-    permission_classes = (AllowAny, )
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-    pagination_class = None
-
-
 class RecipeViewSet(viewsets.ModelViewSet):
+    """
+    Вьюсет для управления кулинарными рецептами.
+    Поддерживает все основные
+    операции CRUD для рецептов.
+    """
     queryset = Recipe.objects.all()
     pagination_class = CustomPaginator
     permission_classes = (IsAuthorOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
-    filterset_class = RecipeFilter
+    filterset_class = RecipeQueryFilter
     http_method_names = ['get', 'post', 'patch', 'create', 'delete']
 
     def get_serializer_class(self):
+        """
+        Определяет класс сериализатора в зависимости от действия.
+        """
         if self.action in ('list', 'retrieve'):
-            return RecipeReadSerializer
+            return RecipeDetailReadSerializer
         return RecipeCreateSerializer
 
     @action(detail=True, methods=['post', 'delete'],
@@ -131,18 +164,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = RecipeSerializer(recipe, data=request.data,
                                           context={"request": request})
             serializer.is_valid(raise_exception=True)
-            if not Favorite.objects.filter(user=request.user,
-                                           recipe=recipe).exists():
-                Favorite.objects.create(user=request.user, recipe=recipe)
+            if not UserFavoriteRecipe.objects.filter(
+                    user=request.user, recipe=recipe).exists():
+                UserFavoriteRecipe.objects.create(
+                    user=request.user, recipe=recipe)
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
-            return Response({'errors': 'Рецепт уже в избранном.'},
+            return Response({'errors': 'Рецепт уже добавлен в избранное.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if request.method == 'DELETE':
-            get_object_or_404(Favorite, user=request.user,
+            get_object_or_404(UserFavoriteRecipe, user=request.user,
                               recipe=recipe).delete()
-            return Response({'detail': 'Рецепт успешно удален из избранного.'},
+            return Response({'detail': 'Рецепт удален из избранного.'},
                             status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
@@ -155,16 +189,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = RecipeSerializer(recipe, data=request.data,
                                           context={"request": request})
             serializer.is_valid(raise_exception=True)
-            if not Shopping_cart.objects.filter(user=request.user,
-                                                recipe=recipe).exists():
-                Shopping_cart.objects.create(user=request.user, recipe=recipe)
+            if not UserShoppingCart.objects.filter(
+                    user=request.user, recipe=recipe).exists():
+                UserShoppingCart.objects.create(
+                    user=request.user, recipe=recipe)
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
-            return Response({'errors': 'Рецепт уже в списке покупок.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'errors': 'Рецепт уже добавлен в список покупок.'},
+                status=status.HTTP_400_BAD_REQUEST)
 
         if request.method == 'DELETE':
-            get_object_or_404(Shopping_cart, user=request.user,
+            get_object_or_404(UserShoppingCart, user=request.user,
                               recipe=recipe).delete()
             return Response(
                 {'detail': 'Рецепт успешно удален из списка покупок.'},
@@ -175,7 +211,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request, **kwargs):
         ingredients = (
-            Recipe_ingredient.objects
+            RecipeIngredientLink.objects
             .filter(recipe__shopping_recipe__user=request.user)
             .values('ingredient')
             .annotate(total_amount=Sum('amount'))
