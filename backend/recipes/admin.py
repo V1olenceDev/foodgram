@@ -28,7 +28,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'image',
         'author',
         'in_favorites'
-        )
+    )
     list_editable = ('name', 'cooking_time', 'text', 'image', 'author')
     readonly_fields = ('in_favorites',)
     list_filter = ('name', 'author', 'tags')
