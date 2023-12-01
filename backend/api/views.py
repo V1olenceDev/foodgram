@@ -26,7 +26,7 @@ from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     UserProfileReadSerializer,
     UserPasswordSetSerializer,
-    UserCreateSerializer,
+    UserProfileCreateSerializer,
     UserSubscriptionsSerializer,
     IngredientSerializer,
     RecipeCreateSerializer,
@@ -55,7 +55,7 @@ class UserProfileViewSet(mixins.CreateModelMixin,
         """
         if self.action in ('list', 'retrieve'):
             return UserProfileReadSerializer
-        return UserCreateSerializer
+        return UserProfileCreateSerializer
 
     @action(detail=False, methods=['get'],
             pagination_class=None,
