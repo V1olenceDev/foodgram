@@ -17,7 +17,7 @@ from .filters import RecipeQueryFilter
 from .pagination import CustomPaginator
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (AuthorSubscriptionSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeDetailReadSerializer, 
+                          RecipeCreateSerializer, RecipeDetailReadSerializer,
                           RecipeSerializer,
                           TagSerializer,
                           UserSubscriptionsSerializer)
