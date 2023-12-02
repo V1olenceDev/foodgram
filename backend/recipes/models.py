@@ -1,6 +1,6 @@
-from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
+from core import constants, validators
 from users.models import User
 
 
@@ -11,17 +11,36 @@ class Ingredient(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=200
+        max_length=constants.MAX_NAME_SLUG_MEASUREMENT_UNIT_LENGHT,
+        validators=(
+            validators.TwoCharValidator(constants.MIN_TEXT_LENGHT),
+            validators.CyrillicCharRegexValidator(),
+        ),
     )
     measurement_unit = models.CharField(
         'Единица измерения',
-        max_length=200
+        max_length=constants.MAX_NAME_SLUG_MEASUREMENT_UNIT_LENGHT,
+        validators=(
+            validators.MinMeasurementUnitLenghtValidator(
+                constants.MIN_MEASUREMENT_UNIT_LENGHT
+            ),
+            validators.CyrillicCharRegexValidator()
+        ),
     )
 
     class Meta:
         ordering = ['name']
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
+        constraints = (
+            models.UniqueConstraint(
+                fields=[
+                    'name',
+                    'measurement_unit',
+                ],
+                name='unique_name_measurement_unit',
+            ),
+        )
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
@@ -34,25 +53,27 @@ class Tag(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=200
+        max_length=constants.MAX_NAME_SLUG_MEASUREMENT_UNIT_LENGHT,
+        unique=True,
+        validators=(
+            validators.TwoCharValidator(constants.MIN_TEXT_LENGHT),
+            validators.CyrillicCharRegexValidator(),
+        )
     )
     color = models.CharField(
         'Цвет в HEX',
-        max_length=7,
-        null=True,
-        validators=[
-            RegexValidator(
-                '^#([a-fA-F0-9]{6})',
-                message='Поле должно содержать HEX-код выбранного цвета.'
-            )
-        ]
+        unique=True,
+        max_length=constants.MAX_TAG_COLOR_LENGHT,
 
     )
     slug = models.SlugField(
         'Уникальный слаг',
-        max_length=200,
+        max_length=constants.MAX_NAME_SLUG_MEASUREMENT_UNIT_LENGHT,
         unique=True,
-        null=True
+        validators=(
+            validators.TwoCharValidator(constants.MIN_TEXT_LENGHT),
+            validators.LatinCharRegexValidator(),
+        )
     )
 
     class Meta:
@@ -72,14 +93,27 @@ class Recipe(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=200
+        max_length=constants.MAX_NAME_SLUG_MEASUREMENT_UNIT_LENGHT,
+        validators=(
+            validators.TwoCharValidator(constants.MIN_TEXT_LENGHT),
+        ),
     )
     text = models.TextField(
-        'Описание'
+        'Описание',
+        validators=(
+            validators.TwoCharValidator(constants.MIN_TEXT_LENGHT),
+        ),
     )
-    cooking_time = models.IntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления, мин',
-        validators=[MinValueValidator(1)]
+        validators=(
+            validators.MinCookingTimeValueValidator(
+                constants.MIN_COOKING_TIME
+            ),
+            validators.MaxCookingTimeValueValidator(
+                constants.MAX_COOKING_TIME
+            )
+        )
     )
     image = models.ImageField(
         'Картинка',
@@ -99,7 +133,7 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredientLink',
-        through_fields=('recipe', 'ingredient'),
+        related_name='ingredients_in_recipe',
         verbose_name='Ингредиенты'
     )
     tags = models.ManyToManyField(
@@ -125,18 +159,23 @@ class RecipeIngredientLink(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipes',
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredients',
         verbose_name='Ингредиент'
     )
     amount = models.IntegerField(
         'Количество',
-        validators=[MinValueValidator(1)]
+        validators=(
+            validators.MinAmountValidator(
+                constants.MIN_AMOUNT
+            ),
+            validators.MaxAmountValidator(
+                constants.MAX_AMOUNT
+            )
+        )
     )
 
     class Meta:
