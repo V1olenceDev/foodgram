@@ -27,4 +27,4 @@ class Command(BaseCommand):
         except FileNotFoundError:
             print(f"Файл {file} не найден.")
         except IntegrityError:
-            print(f"Произошла ошибка при создании ингредиентов.")
+            print("Произошла ошибка при создании ингредиентов.")

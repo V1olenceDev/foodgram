@@ -26,4 +26,4 @@ class Command(BaseCommand):
         except FileNotFoundError:
             print(f"Файл {file} не найден.")
         except IntegrityError:
-            print(f"Произошла ошибка при создании тегов.")
+            print("Произошла ошибка при создании тегов.")
