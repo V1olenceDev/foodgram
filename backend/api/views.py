@@ -19,7 +19,7 @@ from .filters import RecipeQueryFilter
 from .pagination import CustomPaginator
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (AuthorSubscriptionSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeDetailReadSerializer,
+                          RecipeCreateSerializer, RecipeDetailReadSerializer, RecipeSerializer,
                           TagSerializer,
                           UserSubscriptionsSerializer)
 
@@ -117,26 +117,55 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
-    def favorite(self, request, pk):
+    def favorite(self, request, **kwargs):
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+
         if request.method == 'POST':
-            return creation_favorite_or_shopping_cart_recipe(
-                model=UserFavoriteRecipe, user=request.user, id=pk
-            )
-        return delete_recipe_from_favorite_or_shopping_cart(
-            model=UserFavoriteRecipe, user=request.user, id=pk
-        )
+            serializer = RecipeSerializer(recipe, data=request.data,
+                                        context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            if not UserFavoriteRecipe.objects.filter(
+                    user=request.user, recipe=recipe).exists():
+                UserFavoriteRecipe.objects.create(
+                    user=request.user, recipe=recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response({'errors': 'Рецепт уже добавлен в избранное.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == 'DELETE':
+            get_object_or_404(UserFavoriteRecipe, user=request.user,
+                            recipe=recipe).delete()
+            return Response({'detail': 'Рецепт удален из избранного.'},
+                            status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,),
             pagination_class=None)
-    def shopping_cart(self, request, pk):
+    def shopping_cart(self, request, **kwargs):
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+
         if request.method == 'POST':
-            return creation_favorite_or_shopping_cart_recipe(
-                model=UserShoppingCart, user=request.user, id=pk
+            serializer = RecipeSerializer(recipe, data=request.data,
+                                        context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            if not UserShoppingCart.objects.filter(
+                    user=request.user, recipe=recipe).exists():
+                UserShoppingCart.objects.create(
+                    user=request.user, recipe=recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(
+                {'errors': 'Рецепт уже добавлен в список покупок.'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == 'DELETE':
+            get_object_or_404(UserShoppingCart, user=request.user,
+                            recipe=recipe).delete()
+            return Response(
+                {'detail': 'Рецепт успешно удален из списка покупок.'},
+                status=status.HTTP_204_NO_CONTENT
             )
-        return delete_recipe_from_favorite_or_shopping_cart(
-            model=UserShoppingCart, user=request.user, id=pk
-        )
 
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,))
@@ -147,7 +176,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             .values('ingredient')
             .annotate(total_amount=Sum('amount'))
             .values_list('ingredient__name', 'total_amount',
-                         'ingredient__measurement_unit')
+                        'ingredient__measurement_unit')
         )
         file_list = []
         [file_list.append(
