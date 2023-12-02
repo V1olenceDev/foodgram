@@ -8,8 +8,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from core.servises import (creation_favorite_or_shopping_cart_recipe,
-                           delete_recipe_from_favorite_or_shopping_cart)
 from foodgram.settings import FILE_NAME
 from recipes.models import (Ingredient, Recipe, RecipeIngredientLink, Tag,
                             UserFavoriteRecipe, UserShoppingCart)
@@ -19,7 +17,8 @@ from .filters import RecipeQueryFilter
 from .pagination import CustomPaginator
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (AuthorSubscriptionSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeDetailReadSerializer, RecipeSerializer,
+                          RecipeCreateSerializer, RecipeDetailReadSerializer, 
+                          RecipeSerializer,
                           TagSerializer,
                           UserSubscriptionsSerializer)
 
@@ -122,7 +121,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             serializer = RecipeSerializer(recipe, data=request.data,
-                                        context={"request": request})
+                                          context={"request": request})
             serializer.is_valid(raise_exception=True)
             if not UserFavoriteRecipe.objects.filter(
                     user=request.user, recipe=recipe).exists():
@@ -135,7 +134,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'DELETE':
             get_object_or_404(UserFavoriteRecipe, user=request.user,
-                            recipe=recipe).delete()
+                              recipe=recipe).delete()
             return Response({'detail': 'Рецепт удален из избранного.'},
                             status=status.HTTP_204_NO_CONTENT)
 
@@ -147,7 +146,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             serializer = RecipeSerializer(recipe, data=request.data,
-                                        context={"request": request})
+                                          context={"request": request})
             serializer.is_valid(raise_exception=True)
             if not UserShoppingCart.objects.filter(
                     user=request.user, recipe=recipe).exists():
@@ -161,7 +160,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'DELETE':
             get_object_or_404(UserShoppingCart, user=request.user,
-                            recipe=recipe).delete()
+                              recipe=recipe).delete()
             return Response(
                 {'detail': 'Рецепт успешно удален из списка покупок.'},
                 status=status.HTTP_204_NO_CONTENT
@@ -176,7 +175,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             .values('ingredient')
             .annotate(total_amount=Sum('amount'))
             .values_list('ingredient__name', 'total_amount',
-                        'ingredient__measurement_unit')
+                         'ingredient__measurement_unit')
         )
         file_list = []
         [file_list.append(
