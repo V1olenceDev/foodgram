@@ -12,6 +12,5 @@ router.register('ingredients', views.FoodIngredientViewSet,
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('api/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
 ]
