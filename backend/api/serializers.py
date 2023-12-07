@@ -1,5 +1,7 @@
 from django.db import transaction
 from drf_base64.fields import Base64ImageField
+from rest_framework import serializers
+
 from recipes.models import (
     UserFavoriteRecipe,
     Ingredient,
@@ -7,7 +9,6 @@ from recipes.models import (
     RecipeIngredientLink,
     UserShoppingCart,
     Tag)
-from rest_framework import serializers
 from users.models import Subscribe, User
 
 
@@ -225,14 +226,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                   'tags', 'image',
                   'name', 'text',
                   'cooking_time', 'author')
-        extra_kwargs = {
-            'ingredients': {'required': True, 'allow_blank': False},
-            'tags': {'required': True, 'allow_blank': False},
-            'name': {'required': True, 'allow_blank': False},
-            'text': {'required': True, 'allow_blank': False},
-            'image': {'required': True, 'allow_blank': False},
-            'cooking_time': {'required': True},
-        }
 
     def validate(self, obj):
         for field in ['name', 'text', 'cooking_time']:

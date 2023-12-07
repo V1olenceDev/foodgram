@@ -1,6 +1,11 @@
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
+from recipes.constants import (
+    MAX_LENGTH_NAME,
+    MAX_LENGTH_MEASUREMENT_UNIT,
+    MAX_LENGTH_SLUG,
+    MAX_LENGTH_COLOR)
 from users.models import User
 
 
@@ -11,18 +16,28 @@ class Ingredient(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=200
+        max_length=MAX_LENGTH_NAME,
+        validators=[
+            RegexValidator(
+                regex='^#([a-fA-F0-9]{3,6})$',
+                message='Название должно содержать только буквы, '
+                'цифры и пробелы.'
+            )
+        ]
     )
     measurement_unit = models.CharField(
         'Единица измерения',
-        max_length=200
+        max_length=MAX_LENGTH_MEASUREMENT_UNIT
     )
 
     class Meta:
         ordering = ['name']
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
-        unique_together = ('name', 'measurement_unit')
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'measurement_unit'],
+                                    name='unique_ingredient_name_measurement')
+        ]
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
@@ -35,29 +50,31 @@ class Tag(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=200
+        max_length=MAX_LENGTH_NAME
     )
     color = models.CharField(
         'Цвет в HEX',
-        max_length=7,
+        max_length=MAX_LENGTH_COLOR,
         validators=[
             RegexValidator(
-                '^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$',
+                '^#([a-fA-F0-9]{3,6})$',  # Упрощенное регулярное выражение
                 message='Поле должно содержать HEX-код выбранного цвета.'
             )
-        ],
-        null=False
+        ]
     )
     slug = models.SlugField(
         'Уникальный слаг',
-        max_length=200,
-        unique=True,
-        null=True
+        max_length=MAX_LENGTH_SLUG,
+        unique=True
     )
 
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'color'],
+                                    name='unique_name_color')
+        ]
 
     def __str__(self):
         return self.name
@@ -72,7 +89,7 @@ class Recipe(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=200
+        max_length=MAX_LENGTH_NAME
     )
     text = models.TextField(
         'Описание'
@@ -115,6 +132,21 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+    def get_detailed_ingredients(self):
+        """
+        Возвращает список ингредиентов с количеством для этого рецепта.
+        """
+        ingredients_with_amounts = self.ingredients.select_related(
+            'ingredient').all()
+        return [
+            {
+                'ingredient': link.ingredient.name,
+                'amount': link.amount,
+                'measurement_unit': link.ingredient.measurement_unit
+            }
+            for link in ingredients_with_amounts
+        ]
+
 
 class RecipeIngredientLink(models.Model):
     """
@@ -125,7 +157,7 @@ class RecipeIngredientLink(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe_ingredient_links',
+        related_name='ingredients',
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(

@@ -2,7 +2,6 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.serializers import UserCreateSerializer
 from foodgram.settings import FILE_NAME
 from recipes.models import (
     UserFavoriteRecipe,
@@ -22,10 +21,9 @@ from rest_framework.response import Response
 from users.models import Subscribe, User
 
 from .filters import RecipeQueryFilter
-from .pagination import CustomPaginator
+from .pagination import RecipePageNumberPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
-    UserProfileReadSerializer,
     UserSubscriptionsSerializer,
     IngredientSerializer,
     RecipeCreateSerializer,
@@ -43,19 +41,11 @@ class UserProfileViewSet(viewsets.GenericViewSet):
     """
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
-    pagination_class = CustomPaginator
-
-    def get_serializer_class(self):
-        """
-        Определяет класс сериализатора в зависимости от действия.
-        """
-        if self.action in ('list', 'retrieve'):
-            return UserProfileReadSerializer
-        return UserCreateSerializer
+    pagination_class = RecipePageNumberPagination
 
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,),
-            pagination_class=CustomPaginator)
+            pagination_class=RecipePageNumberPagination)
     def subscriptions(self, request):
         queryset = User.objects.filter(subscribing__user=request.user)
         page = self.paginate_queryset(queryset)
@@ -120,7 +110,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     операции CRUD для рецептов.
     """
     queryset = Recipe.objects.all()
-    pagination_class = CustomPaginator
+    pagination_class = RecipePageNumberPagination
     permission_classes = (IsAuthorOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = RecipeQueryFilter

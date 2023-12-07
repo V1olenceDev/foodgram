@@ -3,7 +3,10 @@ from django.db import models
 from django.db.models import CheckConstraint, Q
 from django.contrib.auth.models import AbstractUser
 
-from users.constants import MAX_EMAIL_LENGTH
+from users.constants import (
+    MAX_EMAIL_LENGTH,
+    MAX_LENGTH_FIRST_NAME,
+    MAX_LENGTH_LAST_NAME)
 
 # Валидаторы для имени и фамилии
 name_validator = RegexValidator(r'^[A-Za-zА-Яа-я\s]+$',
@@ -15,11 +18,10 @@ class User(AbstractUser):
     стандартную модель пользователя Django."""
     email = models.EmailField(max_length=MAX_EMAIL_LENGTH, unique=True)
     first_name = models.CharField('Имя',
-                                  max_length=150,
-                                  blank=False,
+                                  max_length=MAX_LENGTH_FIRST_NAME,
                                   validators=[name_validator])
     last_name = models.CharField('Фамилия',
-                                 max_length=150,
+                                 max_length=MAX_LENGTH_LAST_NAME,
                                  blank=False,
                                  validators=[name_validator])
 
