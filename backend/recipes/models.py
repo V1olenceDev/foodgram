@@ -136,7 +136,7 @@ class Recipe(models.Model):
         """
         Возвращает список ингредиентов с количеством для этого рецепта.
         """
-        ingredients_with_amounts = self.ingredients.select_related(
+        ingredients_with_amounts = self.recipe_ingredients.select_related(
             'ingredient').all()
         return [
             {
@@ -157,7 +157,7 @@ class RecipeIngredientLink(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredients',
+        related_name='recipe_ingredients',
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
