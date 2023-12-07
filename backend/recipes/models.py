@@ -6,8 +6,8 @@ from recipes.constants import (
     MAX_LENGTH_MEASUREMENT_UNIT,
     MAX_LENGTH_SLUG,
     MAX_LENGTH_COLOR)
+from recipes.validators import name_validator, hex_validator
 from users.models import User
-from users.validators import name_validator, hex_validator
 
 
 class Ingredient(models.Model):
