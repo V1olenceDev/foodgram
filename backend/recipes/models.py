@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from recipes.constants import (
@@ -7,6 +7,7 @@ from recipes.constants import (
     MAX_LENGTH_SLUG,
     MAX_LENGTH_COLOR)
 from users.models import User
+from users.validators import name_validator, hex_validator
 
 
 class Ingredient(models.Model):
@@ -17,13 +18,7 @@ class Ingredient(models.Model):
     name = models.CharField(
         'Название',
         max_length=MAX_LENGTH_NAME,
-        validators=[
-            RegexValidator(
-                regex='^#([a-fA-F0-9]{3,6})$',
-                message='Название должно содержать только буквы, '
-                'цифры и пробелы.'
-            )
-        ]
+        validators=[name_validator]
     )
     measurement_unit = models.CharField(
         'Единица измерения',
@@ -50,17 +45,13 @@ class Tag(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=MAX_LENGTH_NAME
+        max_length=MAX_LENGTH_NAME,
+        validators=[name_validator]
     )
     color = models.CharField(
         'Цвет в HEX',
         max_length=MAX_LENGTH_COLOR,
-        validators=[
-            RegexValidator(
-                '^#([a-fA-F0-9]{3,6})$',  # Упрощенное регулярное выражение
-                message='Поле должно содержать HEX-код выбранного цвета.'
-            )
-        ]
+        validators=[hex_validator]
     )
     slug = models.SlugField(
         'Уникальный слаг',
@@ -113,12 +104,6 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Автор'
     )
-    ingredients = models.ManyToManyField(
-        Ingredient,
-        through='RecipeIngredientLink',
-        through_fields=('recipe', 'ingredient'),
-        verbose_name='Ингредиенты в рецепте'
-    )
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги'
@@ -132,21 +117,6 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
-    def get_detailed_ingredients(self):
-        """
-        Возвращает список ингредиентов с количеством для этого рецепта.
-        """
-        ingredients_with_amounts = self.recipe_ingredients.select_related(
-            'ingredient').all()
-        return [
-            {
-                'ingredient': link.ingredient.name,
-                'amount': link.amount,
-                'measurement_unit': link.ingredient.measurement_unit
-            }
-            for link in ingredients_with_amounts
-        ]
-
 
 class RecipeIngredientLink(models.Model):
     """
@@ -157,7 +127,7 @@ class RecipeIngredientLink(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe_ingredients',
+        related_name='ingredients',
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
