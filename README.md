@@ -41,5 +41,3 @@
 ## Автор
 
  Гаспарян Валерий (gasparyan.valeri@yandex.ru)
-
-
