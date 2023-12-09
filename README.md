@@ -11,8 +11,8 @@
 - Реализован workflow c автодеплоем на удаленный сервер и отправкой сообщения в Telegram;
 - Проект ранее был развернут на сервере: <http://foodgram-gasp2023.bounceme.net/>
 - Данные админки для тестирования:
-<p style="text-indent: 40px;">Логин: `V1`</p>
-<p style="text-indent: 40px;">Пароль: `Valerka0099`</p>
+<p style="text-indent: 40px;">Логин: V1</p>
+<p style="text-indent: 40px;">Пароль: Valerka0099</p>
 
 ## Развертывание проекта
 
@@ -21,16 +21,16 @@
 1. Установите на сервере `docker` и `docker-compose`.
 2. Создайте файл `.env`  в корне проекта. Шаблон для заполнения файла:
 
-   <p style="text-indent: 40px;">`SECRET_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"`</p>
-   <p style="text-indent: 40px;">`ALLOWED_HOSTS=XXX.XXX.XX.XX,localhost,127.0.0.1,foodgram-gasp2023.bounceme.net`</p>
-   <p style="text-indent: 40px;">`DEBUG=True`</p>
-   <p style="text-indent: 40px;">`POSTGRES_DB=foodgram`</p>
-   <p style="text-indent: 40px;">`POSTGRES_USER=foodgram_user`</p>
-   <p style="text-indent: 40px;">`POSTGRES_PASSWORD=foodgram_password`</p>
-   <p style="text-indent: 40px;">`DB_NAME=foodgram`</p>
-   <p style="text-indent: 40px;">`DB_HOST=db`</p>
-   <p style="text-indent: 40px;">`DB_PORT=5432`</p>
-   <p style="text-indent: 40px;">`DB_ENGINE=django.db.backends.postgresql`</p>
+   <p style="text-indent: 40px;">SECRET_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"</p>
+   <p style="text-indent: 40px;">ALLOWED_HOSTS=XXX.XXX.XX.XX,localhost,127.0.0.1,foodgram-gasp2023.bounceme.net</p>
+   <p style="text-indent: 40px;">DEBUG=True</p>
+   <p style="text-indent: 40px;">POSTGRES_DB=foodgram</p>
+   <p style="text-indent: 40px;">POSTGRES_USER=foodgram_user</p>
+   <p style="text-indent: 40px;">POSTGRES_PASSWORD=foodgram_password</p>
+   <p style="text-indent: 40px;">DB_NAME=foodgram</p>
+   <p style="text-indent: 40px;">DB_HOST=db</p>
+   <p style="text-indent: 40px;">DB_PORT=5432</p>
+   <p style="text-indent: 40px;">DB_ENGINE=django.db.backends.postgresql</p>
 3. Выполните команду `docker-compose up -d --buld`.
 4. Выполните миграции `docker-compose exec backend python manage.py migrate`.
 5. Создайте суперюзера `docker-compose exec backend python manage.py createsuperuser`.
