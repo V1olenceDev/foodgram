@@ -11,7 +11,7 @@
 - Реализован workflow c автодеплоем на удаленный сервер и отправкой сообщения в Telegram;
 - Проект ранее был развернут на сервере: <http://foodgram-gasp2023.bounceme.net/>
 - Данные админки для тестирования:
-<p style="text-indent: 40px;">Логин: V1</p>
+<p style="text-indent: 40px;">Логин: gasparyan.valerik@gmail.com</p>
 <p style="text-indent: 40px;">Пароль: Valerka0099</p>
 
 ## Развертывание проекта
@@ -36,8 +36,7 @@
 5. Создайте суперюзера `docker-compose exec backend python manage.py createsuperuser`.
 6. Соберите статику `docker-compose exec backend python manage.py collectstatic --no-input`.
 7. Заполните базу ингредиентами `docker-compose exec backend python manage.py load_to_db`; `docker-compose exec backend python manage.py load_tags`
-8. **Для корректного создания рецепта, необходимо создать пару тегов в базе через админку.**
-9. Документация к API находится по адресу: <http://localhost/api/docs/redoc.html>.
+8. Документация к API находится по адресу: <http://localhost/api/docs/redoc.html>.
 
 ## Автор
 
