@@ -1,20 +1,16 @@
-from django.contrib.auth.password_validation import validate_password
-from django.core import exceptions as django_exceptions
 from django.db import transaction
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
+from rest_framework import serializers
+
 from recipes.models import (
-    UserFavoriteRecipe,
     Ingredient,
     Recipe,
     RecipeIngredientLink,
-    UserShoppingCart,
     Tag)
-from rest_framework import serializers
 from users.models import Subscribe, User
 
 
-class UserProfileReadSerializer(UserSerializer):
+class UserProfileReadSerializer(serializers.ModelSerializer):
     """
     Сериализатор для чтения информации о пользователе.
     Определяет, подписан ли текущий пользователь на автора.
@@ -28,69 +24,9 @@ class UserProfileReadSerializer(UserSerializer):
                   'is_subscribed')
 
     def get_is_subscribed(self, obj):
-        if (self.context.get('request')
-           and not self.context['request'].user.is_anonymous):
-            return Subscribe.objects.filter(user=self.context['request'].user,
-                                            author=obj).exists()
-        return False
-
-
-class UserProfileCreateSerializer(UserCreateSerializer):
-    """
-    Сериализатор для создания нового пользователя.
-    Включает валидацию уникальности имени пользователя и проверку пароля.
-    """
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username',
-                  'first_name', 'last_name',
-                  'password')
-        extra_kwargs = {
-            'first_name': {'required': True, 'allow_blank': False},
-            'last_name': {'required': True, 'allow_blank': False},
-            'email': {'required': True, 'allow_blank': False},
-        }
-
-    def validate(self, obj):
-        invalid_usernames = ['me', 'set_password',
-                             'subscriptions', 'subscribe']
-        if self.initial_data.get('username') in invalid_usernames:
-            raise serializers.ValidationError(
-                {'username': 'Данное имя пользователя недоступно.'}
-            )
-        return obj
-
-
-class UserPasswordSetSerializer(serializers.Serializer):
-    """
-    Сериализатор для установки нового пароля пользователя.
-    Проверяет текущий пароль и валидирует новый пароль.
-    """
-    current_password = serializers.CharField()
-    new_password = serializers.CharField()
-
-    def validate(self, obj):
-        try:
-            validate_password(obj['new_password'])
-        except django_exceptions.ValidationError as e:
-            raise serializers.ValidationError(
-                {'new_password': list(e.messages)}
-            )
-        return super().validate(obj)
-
-    def update(self, instance, validated_data):
-        if not instance.check_password(validated_data['current_password']):
-            raise serializers.ValidationError(
-                {'current_password': 'Неверный пароль.'}
-            )
-        if (validated_data['current_password']
-           == validated_data['new_password']):
-            raise serializers.ValidationError(
-                {'new_password': 'Новый пароль должен отличаться от текущего.'}
-            )
-        instance.set_password(validated_data['new_password'])
-        instance.save()
-        return validated_data
+        user = self.context['request'].user
+        return user.is_authenticated and user.subscriptions.filter(
+            author=obj).exists()
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -139,9 +75,11 @@ class UserSubscriptionsSerializer(serializers.ModelSerializer):
         limit = request.GET.get('recipes_limit')
         recipes = obj.recipes.all()
         if limit:
-            recipes = recipes[:int(limit)]
-        serializer = RecipeSerializer(recipes, many=True, read_only=True)
-        return serializer.data
+            try:
+                recipes = recipes[:int(limit)]
+            except ValueError:
+                return serializers.ValidationError("Неверное значение.")
+        return RecipeSerializer(recipes, many=True, read_only=True).data
 
 
 class AuthorSubscriptionSerializer(serializers.ModelSerializer):
@@ -236,20 +174,16 @@ class RecipeDetailReadSerializer(serializers.ModelSerializer):
                   'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
-        return (
-            self.context.get('request').user.is_authenticated
-            and UserFavoriteRecipe.objects.filter(
-                user=self.context['request'].user,
-                recipe=obj).exists()
-        )
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return user.favorite_recipes.filter(id=obj.id).exists()
+        return False
 
     def get_is_in_shopping_cart(self, obj):
-        return (
-            self.context.get('request').user.is_authenticated
-            and UserShoppingCart.objects.filter(
-                user=self.context['request'].user,
-                recipe=obj).exists()
-        )
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return user.shopping_cart.filter(id=obj.id).exists()
+        return False
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
@@ -286,14 +220,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                   'tags', 'image',
                   'name', 'text',
                   'cooking_time', 'author')
-        extra_kwargs = {
-            'ingredients': {'required': True, 'allow_blank': False},
-            'tags': {'required': True, 'allow_blank': False},
-            'name': {'required': True, 'allow_blank': False},
-            'text': {'required': True, 'allow_blank': False},
-            'image': {'required': True, 'allow_blank': False},
-            'cooking_time': {'required': True},
-        }
 
     def validate(self, obj):
         for field in ['name', 'text', 'cooking_time']:
