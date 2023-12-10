@@ -1,7 +1,7 @@
 from rest_framework.pagination import PageNumberPagination
 
 
-class RecipePageNumberPagination(PageNumberPagination):
+class CustomPaginator(PageNumberPagination):
     """
     Настроенный класс пагинатора,
     который расширяет стандартный PageNumberPagination.
