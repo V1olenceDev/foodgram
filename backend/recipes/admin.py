@@ -1,26 +1,18 @@
 from django.contrib import admin
+from django.db.models import Count
 
 from . import models
 
 
 @admin.register(models.Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    """
-    Административный интерфейс для модели Ingredient.
-    Предоставляет возможность отображения, фильтрации и поиска по ингредиентам.
-    """
     list_display = ('pk', 'name', 'measurement_unit')
-    list_filter = ('name', )
-    search_fields = ('name', )
+    list_filter = ('name',)
+    search_fields = ('name',)
 
 
 @admin.register(models.Tag)
 class TagAdmin(admin.ModelAdmin):
-    """
-    Административный интерфейс для модели Tag.
-    Позволяет редактировать и просматривать теги, включая их название,
-    цвет и слаг.
-    """
     list_display = ('pk', 'name', 'color', 'slug')
     list_editable = ('name', 'color', 'slug')
     empty_value_display = 'Н/Д'
@@ -28,12 +20,6 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(models.Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    """
-    Административный интерфейс для модели Recipe.
-    Позволяет отображать, редактировать и фильтровать рецепты.
-    Включает дополнительные поля для отображения тегов и
-    количества добавлений в избранное.
-    """
     list_display = (
         'pk',
         'name',
@@ -55,36 +41,22 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='В избранном')
     def in_favorites(self, obj):
-        return obj.favorite_recipes.count()
+        return models.UserFavoriteRecipe.objects.filter(recipe=obj).count()
 
 
 @admin.register(models.RecipeIngredientLink)
 class RecipeIngredientAdmin(admin.ModelAdmin):
-    """
-    Административный интерфейс для модели RecipeIngredientLink.
-    Предоставляет возможности для управления связями
-    между рецептами и ингредиентами.
-    """
     list_display = ('pk', 'recipe', 'ingredient', 'amount')
     list_editable = ('recipe', 'ingredient', 'amount')
 
 
 @admin.register(models.UserFavoriteRecipe)
 class FavoriteAdmin(admin.ModelAdmin):
-    """
-    Административный интерфейс для модели UserFavoriteRecipe.
-    Позволяет управлять избранными рецептами пользователей.
-    """
     list_display = ('pk', 'user', 'recipe')
     list_editable = ('user', 'recipe')
 
 
 @admin.register(models.UserShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
-    """
-    Административный интерфейс для модели UserShoppingCart.
-    Позволяет управлять списком покупок пользователей,
-    включая добавление и удаление рецептов.
-    """
     list_display = ('pk', 'user', 'recipe')
     list_editable = ('user', 'recipe')
