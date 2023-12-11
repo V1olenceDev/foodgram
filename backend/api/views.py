@@ -124,39 +124,57 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeDetailReadSerializer
         return RecipeCreateSerializer
 
-    def handle_action(self, model_class, request, recipe_id, response_message):
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-        if request.method == 'POST':
-            if not model_class.objects.filter(user=request.user,
-                                              recipe=recipe).exists():
-                model_class.objects.create(user=request.user, recipe=recipe)
-                serializer = RecipeSerializer(recipe,
-                                              context={"request": request})
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response({'errors': 'Элемент уже добавлен.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if request.method == 'DELETE':
-            get_object_or_404(model_class, user=request.user,
-                              recipe=recipe).delete()
-            return Response({'detail': response_message},
-                            status=status.HTTP_204_NO_CONTENT)
-
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
     def favorite(self, request, **kwargs):
-        return self.handle_action(UserFavoriteRecipe,
-                                  request,
-                                  kwargs['pk'], 'Рецепт удален из избранного.')
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+
+        if request.method == 'POST':
+            serializer = RecipeSerializer(recipe, data=request.data,
+                                          context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            if not UserFavoriteRecipe.objects.filter(
+                    user=request.user, recipe=recipe).exists():
+                UserFavoriteRecipe.objects.create(
+                    user=request.user, recipe=recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response({'errors': 'Рецепт уже добавлен в избранное.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == 'DELETE':
+            get_object_or_404(UserFavoriteRecipe, user=request.user,
+                              recipe=recipe).delete()
+            return Response({'detail': 'Рецепт удален из избранного.'},
+                            status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=(IsAuthenticated,))
+            permission_classes=(IsAuthenticated,),
+            pagination_class=None)
     def shopping_cart(self, request, **kwargs):
-        return self.handle_action(UserShoppingCart,
-                                  request,
-                                  kwargs['pk'],
-                                  'Рецепт удален из списка покупок.')
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+
+        if request.method == 'POST':
+            serializer = RecipeSerializer(recipe, data=request.data,
+                                          context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            if not UserShoppingCart.objects.filter(
+                    user=request.user, recipe=recipe).exists():
+                UserShoppingCart.objects.create(
+                    user=request.user, recipe=recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(
+                {'errors': 'Рецепт уже добавлен в список покупок.'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == 'DELETE':
+            get_object_or_404(UserShoppingCart, user=request.user,
+                              recipe=recipe).delete()
+            return Response(
+                {'detail': 'Рецепт успешно удален из списка покупок.'},
+                status=status.HTTP_204_NO_CONTENT
+            )
 
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,))
