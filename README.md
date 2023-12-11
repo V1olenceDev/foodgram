@@ -31,7 +31,7 @@
    <p style="text-indent: 40px;">DB_HOST=db</p>
    <p style="text-indent: 40px;">DB_PORT=5432</p>
    <p style="text-indent: 40px;">DB_ENGINE=django.db.backends.postgresql</p>
-3. Выполните команду `docker-compose up -d --buld`.
+3. Выполните команду `docker-compose up -d --build`.
 4. Выполните миграции `docker-compose exec backend python manage.py migrate`.
 5. Создайте суперюзера `docker-compose exec backend python manage.py createsuperuser`.
 6. Соберите статику `docker-compose exec backend python manage.py collectstatic --no-input`.
