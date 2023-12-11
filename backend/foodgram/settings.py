@@ -92,25 +92,29 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
     'DEFAULT_PAGINATION_CLASS': 'api.pagination.RecipePageNumberPagination',
     'PAGE_SIZE': 6,
-    'SEARCH_PARAM': 'name',
 }
 
 DJOSER = {
+    "HIDE_USERS": False,
     'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
         'user': 'api.serializers.UserProfileReadSerializer',
         'current_user': 'api.serializers.UserProfileReadSerializer',
+    },
+    "PERMISSIONS": {
+        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+        "user_list": ["rest_framework.permissions.AllowAny"],
     },
 }
 
