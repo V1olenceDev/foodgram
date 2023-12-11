@@ -25,7 +25,7 @@ class UserProfileReadSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
-        return user.is_authenticated and user.subscriptions.filter(
+        return user.is_authenticated and user.subscribing.filter(
             author=obj).exists()
 
 
