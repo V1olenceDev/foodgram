@@ -110,6 +110,10 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'user': 'api.serializers.UserProfileReadSerializer',
+        'current_user': 'api.serializers.UserProfileReadSerializer',
+    },
 }
 
 LANGUAGE_CODE = 'ru'
