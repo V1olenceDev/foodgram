@@ -1,6 +1,6 @@
 from django_filters.rest_framework import FilterSet, filters
 
-from recipes.models import Recipe, Tag
+from recipes.models import Recipe, Tag, UserFavoriteRecipe, UserShoppingCart
 
 
 class RecipeQueryFilter(FilterSet):
@@ -28,7 +28,9 @@ class RecipeQueryFilter(FilterSet):
         """
         user = self.request.user
         if value and user.is_authenticated:
-            return queryset.filter(favorite_recipes__user=user)
+            favorited_recipe_ids = UserFavoriteRecipe.objects.filter(
+                user=user).values_list('recipe_id', flat=True)
+            return queryset.filter(id__in=favorited_recipe_ids)
         return queryset
 
     def filter_recipes_in_shopping_cart(self, queryset, name, value):
@@ -38,5 +40,7 @@ class RecipeQueryFilter(FilterSet):
         """
         user = self.request.user
         if value and user.is_authenticated:
-            return queryset.filter(shopping_cart__user=user)
+            shopping_cart_recipe_ids = UserShoppingCart.objects.filter(
+                user=user).values_list('recipe_id', flat=True)
+            return queryset.filter(id__in=shopping_cart_recipe_ids)
         return queryset
