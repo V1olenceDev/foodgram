@@ -28,11 +28,7 @@ class RecipeQueryFilter(FilterSet):
         """
         user = self.request.user
         if value and user.is_authenticated:
-            # Получаем ID избранных рецептов пользователя через related_name
-            favorited_recipe_ids = user.favorite_recipes.values_list(
-                'recipe_id', flat=True)
-            # Фильтруем рецепты по этим ID
-            return queryset.filter(id__in=favorited_recipe_ids)
+            return queryset.filter(favorite_recipes__user=user)
         return queryset
 
     def filter_recipes_in_shopping_cart(self, queryset, name, value):
