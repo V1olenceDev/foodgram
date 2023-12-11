@@ -3,6 +3,8 @@ from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 
 from recipes.models import (
+    UserFavoriteRecipe,
+    UserShoppingCart,
     Ingredient,
     Recipe,
     RecipeIngredientLink,
@@ -174,16 +176,20 @@ class RecipeDetailReadSerializer(serializers.ModelSerializer):
                   'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
-        if user.is_authenticated:
-            return user.favorite_recipes.filter(id=obj.id).exists()
-        return False
+        return (
+            self.context.get('request').user.is_authenticated
+            and UserFavoriteRecipe.objects.filter(
+                user=self.context['request'].user,
+                recipe=obj).exists()
+        )
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
-        if user.is_authenticated:
-            return user.shopping_cart.filter(id=obj.id).exists()
-        return False
+        return (
+            self.context.get('request').user.is_authenticated
+            and UserShoppingCart.objects.filter(
+                user=self.context['request'].user,
+                recipe=obj).exists()
+        )
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
