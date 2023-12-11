@@ -176,7 +176,7 @@ class RecipeDetailReadSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
         if user.is_authenticated:
-            return user.favorite_recipes.filter(id=obj.id).exists()
+            return user.userfavoriterecipe.filter(id=obj.id).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
