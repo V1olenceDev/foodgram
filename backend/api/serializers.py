@@ -271,20 +271,29 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        # Обновление базовых полей рецепта
         instance.image = validated_data.get('image', instance.image)
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
-        tags = validated_data.pop('tags', None)
-        ingredients_data = validated_data.pop('ingredients', None)
 
-        if tags:
+        # Обновление тегов, если они присутствуют в данных
+        tags = validated_data.pop('tags', None)
+        if tags is not None:
             instance.tags.set(tags)
 
-        if ingredients_data:
+        # Обновление ингредиентов
+        ingredients_data = validated_data.pop('ingredients', None)
+        if ingredients_data is not None:
             RecipeIngredientLink.objects.filter(recipe=instance).delete()
-            self.tags_and_ingredients_set(instance, ingredients_data)
+            for ingredient_data in ingredients_data:
+                RecipeIngredientLink.objects.create(
+                    recipe=instance,
+                    ingredient=Ingredient.objects.get(
+                        pk=ingredient_data['id']),
+                    amount=ingredient_data['amount']
+                )
 
         instance.save()
         return instance
