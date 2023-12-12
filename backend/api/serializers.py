@@ -226,14 +226,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                   'tags', 'image',
                   'name', 'text',
                   'cooking_time', 'author')
-        extra_kwargs = {
-            'ingredients': {'required': True, 'allow_blank': False},
-            'tags': {'required': True, 'allow_blank': False},
-            'name': {'required': True, 'allow_blank': False},
-            'text': {'required': True, 'allow_blank': False},
-            'image': {'required': True, 'allow_blank': False},
-            'cooking_time': {'required': True},
-        }
 
     def validate(self, obj):
         for field in ['name', 'text', 'cooking_time']:
@@ -255,6 +247,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Ингредиенты должны быть уникальны.'
             )
+        return obj
 
     @transaction.atomic
     def tags_and_ingredients_set(self, recipe, tags, ingredients):
@@ -283,12 +276,25 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
-        RecipeIngredientLink.objects.filter(
-            recipe=instance,
-            ingredient__in=instance.ingredients.all()).delete()
-        self.tags_and_ingredients_set(instance, tags, ingredients)
+
+        tags = validated_data.pop('tags', [])
+        ingredients = validated_data.pop('ingredients', [])
+
+        if tags:
+            instance.tags.set(tags)
+
+        if ingredients:
+            RecipeIngredientLink.objects.filter(recipe=instance).delete()
+            ingredient_links = [
+                RecipeIngredientLink(
+                    recipe=instance,
+                    ingredient_id=ingredient['id'],
+                    amount=ingredient['amount']
+                )
+                for ingredient in ingredients
+            ]
+            RecipeIngredientLink.objects.bulk_create(ingredient_links)
+
         instance.save()
         return instance
 
