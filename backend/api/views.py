@@ -53,23 +53,29 @@ class UserProfileViewSet(viewsets.GenericViewSet):
             page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=True, methods=['post', 'delete'],
+    @action(detail=True,
+            methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
-    def subscribe(self, request, **kwargs):
-        author = get_object_or_404(User, id=kwargs['pk'])
+    def subscribe(self, request, pk=None):
+        author = get_object_or_404(User, id=pk)
 
         if request.method == 'POST':
-            serializer = AuthorSubscriptionSerializer(
-                author, data=request.data, context={"request": request})
-            serializer.is_valid(raise_exception=True)
+            if Subscribe.objects.filter(user=request.user,
+                                        author=author).exists():
+                return Response(
+                    {'detail': 'Вы уже подписаны на этого автора.'},
+                    status=status.HTTP_400_BAD_REQUEST)
+
             Subscribe.objects.create(user=request.user, author=author)
-            return Response(serializer.data,
-                            status=status.HTTP_201_CREATED)
+            serializer = AuthorSubscriptionSerializer(
+                author, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
-            get_object_or_404(Subscribe, user=request.user,
-                              author=author).delete()
-            return Response({'detail': 'Успешно'},
+            subscription = get_object_or_404(
+                Subscribe, user=request.user, author=author)
+            subscription.delete()
+            return Response({'detail': 'Подписка отменена.'},
                             status=status.HTTP_204_NO_CONTENT)
 
 

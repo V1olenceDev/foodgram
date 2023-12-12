@@ -276,12 +276,16 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
-        RecipeIngredientLink.objects.filter(
-            recipe=instance,
-            ingredient__in=instance.ingredients.all()).delete()
-        self.tags_and_ingredients_set(instance, tags, ingredients)
+        tags = validated_data.pop('tags', None)
+        ingredients_data = validated_data.pop('ingredients', None)
+
+        if tags:
+            instance.tags.set(tags)
+
+        if ingredients_data:
+            RecipeIngredientLink.objects.filter(recipe=instance).delete()
+            self.tags_and_ingredients_set(instance, ingredients_data)
+
         instance.save()
         return instance
 
