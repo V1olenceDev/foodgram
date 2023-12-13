@@ -40,7 +40,7 @@ class UserProfileViewSet(viewsets.GenericViewSet):
     просмотр списка и детальный просмотр профилей.
     """
     queryset = User.objects.all()
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
     pagination_class = RecipePageNumberPagination
 
     @action(detail=False, methods=['get'],
