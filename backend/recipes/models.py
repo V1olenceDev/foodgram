@@ -81,7 +81,8 @@ class Recipe(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=MAX_LENGTH_NAME
+        max_length=MAX_LENGTH_NAME,
+        validators=[regex_name_validator]
     )
     text = models.TextField(
         'Описание'

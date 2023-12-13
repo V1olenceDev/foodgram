@@ -3,13 +3,6 @@ from django.contrib import admin
 from . import models
 
 
-@admin.register(models.Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'measurement_unit')
-    list_filter = ('name',)
-    search_fields = ('name',)
-
-
 @admin.register(models.Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'color', 'slug')
@@ -41,6 +34,14 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='В избранном')
     def in_favorites(self, obj):
         return models.UserFavoriteRecipe.objects.filter(recipe=obj).count()
+
+    def save_model(self, request, obj, form, change):
+        if not obj.ingredients.exists():
+            raise ValueError(
+                "Рецепт должен содержать хотя бы один ингредиент.")
+        if not obj.image:
+            raise ValueError("Рецепт должен иметь изображение.")
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(models.RecipeIngredientLink)
