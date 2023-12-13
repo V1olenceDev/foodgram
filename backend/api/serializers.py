@@ -1,4 +1,3 @@
-from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
@@ -30,11 +29,6 @@ class UserProfileReadSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         return user.is_authenticated and user.subscribing.filter(
             author=obj).exists()
-
-    def to_representation(self, instance):
-        if isinstance(instance, AnonymousUser):
-            raise serializers.ValidationError("Аутентификация не выполнена.")
-        return super().to_representation(instance)
 
 
 class RecipeSerializer(serializers.ModelSerializer):
