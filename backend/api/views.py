@@ -25,7 +25,6 @@ from .pagination import RecipePageNumberPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     UserSubscriptionsSerializer,
-    UserProfileReadSerializer,
     IngredientSerializer,
     RecipeCreateSerializer,
     RecipeDetailReadSerializer,
@@ -43,15 +42,7 @@ class UserProfileViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     pagination_class = RecipePageNumberPagination
-
-    @action(detail=False, methods=['get'],
-            pagination_class=None,
-            permission_classes=(IsAuthenticated,))
-    def me(self, request):
-        serializer = UserProfileReadSerializer(request.user)
-        return Response(serializer.data,
-                        status=status.HTTP_200_OK)
-
+ 
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,),
             pagination_class=RecipePageNumberPagination)
