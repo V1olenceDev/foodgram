@@ -277,7 +277,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
         tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
+        ingredients = validated_data.pop('ingredient')
         RecipeIngredientLink.objects.filter(
             recipe=instance,
             ingredient__in=instance.ingredients.all()).delete()
