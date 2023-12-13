@@ -162,7 +162,7 @@ class RecipeDetailReadSerializer(serializers.ModelSerializer):
     author = UserProfileReadSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientDetailSerializer(
-        many=True, read_only=True, source='recipes')
+        many=True, read_only=True, source='ingredients')
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     image = Base64ImageField()
