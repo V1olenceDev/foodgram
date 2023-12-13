@@ -42,7 +42,7 @@ class UserProfileViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     pagination_class = RecipePageNumberPagination
- 
+
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,),
             pagination_class=RecipePageNumberPagination)
