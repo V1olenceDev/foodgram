@@ -1,24 +1,40 @@
 from django.contrib import admin
-
-from . import models
-
-
-@admin.register(models.Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'measurement_unit')
-    list_filter = ('name',)
-    search_fields = ('name',)
+from django import forms
+from .models import (Ingredient,
+                     Tag,
+                     Recipe,
+                     UserFavoriteRecipe,
+                     UserShoppingCart,
+                     RecipeIngredientLink)
 
 
-@admin.register(models.Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'color', 'slug')
-    list_editable = ('name', 'color', 'slug')
-    empty_value_display = 'Н/Д'
+class RecipeAdminForm(forms.ModelForm):
+    class Meta:
+        model = Recipe
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        image = cleaned_data.get("image")
+
+        if not image:
+            self.add_error(
+                'image',
+                'Необходимо добавить изображение для рецепта.')
+
+        return cleaned_data
 
 
-@admin.register(models.Recipe)
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredientLink
+    extra = 1
+    min_num = 1
+
+
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
+    form = RecipeAdminForm
+    inlines = [RecipeIngredientInline]
     list_display = (
         'pk',
         'name',
@@ -40,22 +56,43 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='В избранном')
     def in_favorites(self, obj):
-        return models.UserFavoriteRecipe.objects.filter(recipe=obj).count()
+        return UserFavoriteRecipe.objects.filter(recipe=obj).count()
+
+    def save_formset(self, request, form, formset, change):
+        if formset.model != RecipeIngredientLink:
+            return super().save_formset(request, form, formset, change)
+
+        instances = formset.save(commit=False)
+        for instance in instances:
+            if not instance.ingredient:
+                formset.add_error(
+                    None,
+                    'Необходимо добавить хотя бы один ингредиент.')
+            instance.save()
+        formset.save_m2m()
 
 
-@admin.register(models.RecipeIngredientLink)
-class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'recipe', 'ingredient', 'amount')
-    list_editable = ('recipe', 'ingredient', 'amount')
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'measurement_unit')
+    list_filter = ('name',)
+    search_fields = ('name',)
 
 
-@admin.register(models.UserFavoriteRecipe)
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'color', 'slug')
+    list_editable = ('name', 'color', 'slug')
+    empty_value_display = 'Н/Д'
+
+
+@admin.register(UserFavoriteRecipe)
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = ('pk', 'user', 'recipe')
     list_editable = ('user', 'recipe')
 
 
-@admin.register(models.UserShoppingCart)
+@admin.register(UserShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ('pk', 'user', 'recipe')
     list_editable = ('user', 'recipe')
