@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 
 from . import models
 
@@ -20,9 +21,15 @@ class RecipeAdmin(admin.ModelAdmin):
         'display_tags',
         'image',
         'author',
-        'in_favorites'
+        'in_favorites',
+        'ingredient'
     )
-    list_editable = ('name', 'cooking_time', 'text', 'image', 'author')
+    list_editable = ('name',
+                     'cooking_time',
+                     'text',
+                     'image',
+                     'author',
+                     'ingredient')
     readonly_fields = ('in_favorites',)
     list_filter = ('name', 'author', 'tags')
     empty_value_display = 'Н/Д'
@@ -35,13 +42,13 @@ class RecipeAdmin(admin.ModelAdmin):
     def in_favorites(self, obj):
         return models.UserFavoriteRecipe.objects.filter(recipe=obj).count()
 
-    def save_model(self, request, obj, form, change):
-        if not obj.ingredients.exists():
-            raise ValueError(
+    def clean(self):
+        # Проверка на наличие ингредиентов и изображения
+        if not self.ingredients.exists():
+            raise ValidationError(
                 "Рецепт должен содержать хотя бы один ингредиент.")
-        if not obj.image:
-            raise ValueError("Рецепт должен иметь изображение.")
-        super().save_model(request, obj, form, change)
+        if not self.image:
+            raise ValidationError("Рецепт должен иметь изображение.")
 
 
 @admin.register(models.RecipeIngredientLink)
