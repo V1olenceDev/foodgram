@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+
 from .models import (Ingredient,
                      Tag,
                      Recipe,
@@ -12,17 +13,6 @@ class RecipeAdminForm(forms.ModelForm):
     class Meta:
         model = Recipe
         fields = '__all__'
-
-    def clean(self):
-        cleaned_data = super().clean()
-        image = cleaned_data.get("image")
-
-        if not image:
-            self.add_error(
-                'image',
-                'Необходимо добавить изображение для рецепта.')
-
-        return cleaned_data
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -57,19 +47,6 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='В избранном')
     def in_favorites(self, obj):
         return UserFavoriteRecipe.objects.filter(recipe=obj).count()
-
-    def save_formset(self, request, form, formset, change):
-        if formset.model != RecipeIngredientLink:
-            return super().save_formset(request, form, formset, change)
-
-        instances = formset.save(commit=False)
-        for instance in instances:
-            if not instance.ingredient:
-                formset.add_error(
-                    None,
-                    'Необходимо добавить хотя бы один ингредиент.')
-            instance.save()
-        formset.save_m2m()
 
 
 @admin.register(Ingredient)
