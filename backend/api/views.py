@@ -1,36 +1,28 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from django_filters.rest_framework import DjangoFilterBackend
-from foodgram.settings import FILE_NAME
-from recipes.models import (
-    UserFavoriteRecipe,
-    Ingredient,
-    Recipe,
-    RecipeIngredientLink,
-    UserShoppingCart,
-    Tag)
-from rest_framework import (
-    filters,
-    mixins,
-    status,
-    viewsets)
+
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from recipes.models import (
+    Ingredient, Recipe, RecipeIngredientLink,
+    Tag, UserFavoriteRecipe, UserShoppingCart,
+)
 from users.models import Subscribe, User
 
 from .filters import RecipeQueryFilter
 from .pagination import RecipePageNumberPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
-    UserSubscriptionsSerializer,
-    IngredientSerializer,
-    RecipeCreateSerializer,
-    RecipeDetailReadSerializer,
-    RecipeSerializer,
-    AuthorSubscriptionSerializer,
-    TagSerializer)
+    AuthorSubscriptionSerializer, IngredientSerializer,
+    RecipeCreateSerializer, RecipeDetailReadSerializer,
+    RecipeSerializer, TagSerializer, UserSubscriptionsSerializer,
+)
 
 
 class UserProfileViewSet(viewsets.GenericViewSet):
@@ -198,5 +190,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             '{} - {} {}.'.format(*ingredient)) for ingredient in ingredients]
         file = HttpResponse('Cписок покупок:\n' + '\n'.join(file_list),
                             content_type='text/plain')
-        file['Content-Disposition'] = (f'attachment; filename={FILE_NAME}')
+        file['Content-Disposition'] = (
+            f'attachment;filename={settings.FILE_NAME}')
         return file
