@@ -9,7 +9,6 @@
 - Проект завернут в Docker-контейнеры;
 - Образы foodgram_frontend, foodgram_backend и foodgram_gateway запушены на DockerHub;
 - Реализован workflow c автодеплоем на удаленный сервер и отправкой сообщения в Telegram;
-- Проект ранее был развернут на сервере: <http://foodgram-gasp2023.bounceme.net/>
 - Данные админки для тестирования:
 <p style="text-indent: 40px;">Логин: gasparyan.valerik@gmail.com</p>
 <p style="text-indent: 40px;">Пароль: Valerka0099</p>
@@ -39,5 +38,4 @@
 8. Документация к API находится по адресу: <http://localhost/api/docs/redoc.html>.
 
 ## Автор
-
- Гаспарян Валерий (gasparyan.valeri@yandex.ru)
+[Гаспарян Валерий Гургенович](https://github.com/V1olenceDev)
